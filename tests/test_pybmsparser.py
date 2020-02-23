@@ -26,3 +26,15 @@ class TestBMS:
     def test_2行newlineは2line(self):
         bms = parse('foo\nbar\n')
         assert len(bms.line) == 2
+
+
+class TestLine:
+    def test_00(self):
+        '#から始まるlineはcommandline'
+        bms = parse('#foo')
+        assert len(bms.commandline) == 1
+
+    def test_01(self):
+        '#から始まらないlineはcomment'
+        bms = parse('foo')
+        assert len(bms.comment) == 1
