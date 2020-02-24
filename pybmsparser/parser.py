@@ -108,9 +108,16 @@ def parse(bms: str) -> BMS:
             (pp.Literal(' ') ^ '\t').suppress() + text()).setParseAction(
                 bms_obj.bmp_found)
 
+    def channel():
+        return (
+            pp.Combine('0' + pp.Word(pp.srange('[1346]'), exact=1)) ^
+            pp.Combine('1' + pp.Word(pp.srange('[1-7]'), exact=1)) ^
+            pp.Combine('2' + pp.Word(pp.srange('[1-7]'), exact=1)))
+
     def message():
         return (
-            pp.Word(pp.nums, exact=3) + hex2() + pp.Literal(':').suppress() +
+            pp.Word(pp.nums, exact=3) + channel() +
+            pp.Literal(':').suppress() +
             pp.OneOrMore(hex2())).setParseAction(bms_obj.message_found)
 
     def command():

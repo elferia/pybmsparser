@@ -49,8 +49,8 @@ class TestLine:
 
 class TestCommandLine:
     def test_message(self):
-        bms = parse('#09910:20ff')
-        assert bms.message[99] == (0x10, [0x20, 0xff])
+        bms = parse('#09911:20ff')
+        assert bms.message[99] == (0x11, [0x20, 0xff])
 
     def test_definition(self):
         bms = parse('#player 1')
@@ -89,3 +89,13 @@ class TestBMP:
     def test_bmp(self):
         bms = parse('#BmPf1 foo.bmp')
         assert bms.bmp[0xf1] == 'foo.bmp'
+
+
+class TestMessage:
+    def test_message0(self):
+        bms = parse('#01001:Fa10')
+        assert bms.message[10] == (0x01, [0xfa, 0x10])
+
+    def test_message2(self):
+        bms = parse('#00027:00')
+        assert bms.message[0] == (0x27, [0])
