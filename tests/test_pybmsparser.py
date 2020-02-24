@@ -42,3 +42,9 @@ class TestLine:
         '#から始まらないlineはcomment'
         bms = parse('foo')
         assert len(bms.commandline) == 0
+
+
+class TestCommandLine:
+    def test_message(self):
+        bms = parse('#09910:20ff')
+        assert bms.message[99] == (0x10, [0x20, 0xff])
