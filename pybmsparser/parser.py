@@ -1,10 +1,12 @@
 from collections import namedtuple
 from dataclasses import dataclass
 import dataclasses as dc
+from enum import Enum
 from functools import partial
 from operator import methodcaller
 from os.path import dirname, join as joinpath
-from typing import Any, Callable, Dict, List
+from typing import (
+    Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Set)
 
 import pyparsing as pp
 pp.ParserElement.setDefaultWhitespaceChars('')
@@ -12,23 +14,27 @@ pp.ParserElement.setDefaultWhitespaceChars('')
 
 Message = namedtuple('Message', 'channel message')
 
+StrictFlag = Enum('StrictFlag', 'DUPRECATE_DEFINITION')
+
 
 @dataclass
 class BMS:
     command: List[str] = dc.field(default_factory=list)
     message: List[Message] = dc.field(default_factory=lambda: [None] * 1000)
-    player: int = 1
-    genre: str = ''
-    title: str = ''
-    artist: str = ''
-    bpm: int = 130
-    midifile: str = ''
-    playlevel: int = 0
-    rank: int = -1
-    volwav: int = 100
+    player: Optional[int] = 1
+    genre: Optional[str] = ''
+    title: Optional[str] = ''
+    artist: Optional[str] = ''
+    bpm: Optional[int] = 130
+    midifile: Optional[str] = None
+    playlevel: Optional[int] = 0
+    rank: Optional[int] = -1
+    volwav: Optional[int] = 100
     wav: Dict[int, str] = dc.field(default_factory=dict)
     bmp: Dict[int, str] = dc.field(default_factory=dict)
     _processor: Callable[[Any], None] = lambda _toks: None
+    flag_set: FrozenSet[StrictFlag] = frozenset()
+    duplicate_definitions: Set[str] = dc.field(default_factory=set)
 
     _CONVERTER = dict(
         player=int, bpm=int, playlevel=int, rank=int, volwav=int, random=int)
@@ -59,7 +65,11 @@ class BMS:
 
     def set_definition(self, toks) -> None:
         key, value = toks
-        setattr(self, key.casefold(), self._CONVERTER.get(key, str)(value))
+        key = key.casefold()
+        if (StrictFlag.DUPRECATE_DEFINITION in self.flag_set and
+                getattr(self, key) is not None):
+            self.duplicate_definitions.add(key)
+        setattr(self, key, self._CONVERTER.get(key, str)(value))
 
     def set_wav(self, toks) -> None:
         self.wav[self.int16(toks[0])] = toks[1]
@@ -73,7 +83,9 @@ with open(joinpath(dirname(__file__), 'definition.txt')) as f:
         map(methodcaller('split', '#'), map(methodcaller('strip'), f)))
 
 
-def parse(bms: str) -> BMS:
+def parse(bms: str, *strict_flag: StrictFlag) -> BMS:
+    flag_set = frozenset(strict_flag)
+
     def text(): return pp.CharsNotIn('\r\n')
     def newline(): return pp.Word('\r\n').suppress()
     def wsp(): return pp.Optional(pp.Word(' \t'))
@@ -129,11 +141,25 @@ def parse(bms: str) -> BMS:
     def line(): return (
         (command() | comment()).setParseAction(bms_obj.extend_commandline))
 
-    bms_obj = BMS()
+    bms_obj = BMS(
+        player=None, genre=None, title=None, artist=None, bpm=None,
+        playlevel=None, volwav=None, flag_set=flag_set
+    ) if StrictFlag.DUPRECATE_DEFINITION in flag_set else BMS()
     bmsparser = (
         pp.Optional(line()) + pp.ZeroOrMore(newline() + line()) +
         pp.Optional(newline()))
 
     bmsparser.parseWithTabs()
     bmsparser.parseString(bms, parseAll=True)
+
+    if bms_obj.duplicate_definitions:
+        raise ParseError(bms_obj.duplicate_definitions)
     return bms_obj
+
+
+@dataclass
+class ParseError(Exception):
+    duplicate_definitions: FrozenSet[str]
+
+    def __init__(self, duplicate_definitions: Iterable[str] = ()):
+        self.duplicate_definitions = frozenset(duplicate_definitions)

@@ -2,7 +2,7 @@ from pyparsing import ParseException
 from pytest import raises
 
 from pybmsparser import __version__
-from pybmsparser.parser import parse
+from pybmsparser.parser import ParseError, StrictFlag, parse
 
 
 def test_version():
@@ -99,3 +99,13 @@ class TestMessage:
     def test_message2(self):
         bms = parse('#00027:00')
         assert bms.message[0] == (0x27, [0])
+
+
+class TestDuplicateDefinition:
+    def test_player(self):
+        with raises(ParseError) as e:
+            parse('#player 1\n#player 2', StrictFlag.DUPRECATE_DEFINITION)
+        assert e.value.duplicate_definitions == frozenset('player'.split())
+
+    def test_player_ok(self):
+        parse('#player 1\n#player 2')
