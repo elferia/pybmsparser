@@ -12,30 +12,30 @@ class TestBMS:
         assert len(bms.commandline) == 0
 
     def test_1行EOFは1line(self):
-        bms = parse('#foo')
+        bms = parse('#endif')
         assert len(bms.commandline) == 1
 
     def test_1行newlineは1line(self):
-        bms = parse('#foo\n')
+        bms = parse('#endif\n')
         assert len(bms.commandline) == 1
 
     def test_空行後1行は1line(self):
-        bms = parse('\n#foo')
+        bms = parse('\n#endif')
         assert len(bms.commandline) == 1
 
     def test_2行EOFは2line(self):
-        bms = parse('#foo\n#bar')
+        bms = parse('#endif\n#endif')
         assert len(bms.commandline) == 2
 
     def test_2行newlineは2line(self):
-        bms = parse('#foo\n#bar\n')
+        bms = parse('#endif\n#endif\n')
         assert len(bms.commandline) == 2
 
 
 class TestLine:
     def test_00(self):
         '#から始まるlineはcommandline'
-        bms = parse('#foo')
+        bms = parse('#endif')
         assert len(bms.commandline) == 1
 
     def test_01(self):
