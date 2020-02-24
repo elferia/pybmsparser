@@ -4,7 +4,7 @@ import dataclasses as dc
 from functools import partial
 from operator import methodcaller
 from os.path import dirname, join as joinpath
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List
 
 import pyparsing as pp
 pp.ParserElement.setDefaultWhitespaceChars('')
