@@ -60,7 +60,11 @@ def parse(bms: str) -> BMS:
     def endif(): return pp.CaselessKeyword('endif') + wsp().suppress()
 
     def _definition():
-        nonlocal text, dex, wsp
+        nonlocal text, wsp
+
+        def dex():
+            return wsp().suppress() + pp.Word(pp.nums) + wsp().suppress()
+
         for key, argstr in definitionlist:
             yield (
                 pp.CaselessKeyword(key) + (pp.Literal(' ') ^ '\t').suppress() +
