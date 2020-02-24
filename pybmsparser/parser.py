@@ -38,11 +38,11 @@ class BMS:
 
 
 def parse(bms: str) -> BMS:
-    def newline(): return PPWord('\r\n')
+    def newline(): return PPWord('\r\n').suppress()
     def line(): return PPNotWord('\r\n')
     bmsparser = (
         PPOptional(newline()) + PPZeroOrMore(line() + newline()) +
         PPOptional(line()))
     bmsparser.setDefaultWhitespaceChars('')
     parsedbms = bmsparser.parseString(bms)
-    return BMS(s for s in parsedbms.asList() if s not in '\r\n')
+    return BMS(parsedbms)
