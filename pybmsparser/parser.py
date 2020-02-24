@@ -17,7 +17,15 @@ Message = namedtuple('Message', 'channel message')
 class BMS:
     command: List[str] = dc.field(default_factory=list)
     message: List[Message] = dc.field(default_factory=lambda: [None] * 1000)
-    definition: Dict[str, Union[str, int]] = dc.field(default_factory=dict)
+    player: int = 1
+    genre: str = ''
+    title: str = ''
+    artist: str = ''
+    bpm: int = 130
+    midifile: str = ''
+    playlevel: int = 0
+    rank: int = -1
+    volwav: int = 100
     wav: Dict[int, str] = dc.field(default_factory=dict)
     _processor: Callable[[Any], None] = lambda _toks: None
 
@@ -47,7 +55,7 @@ class BMS:
 
     def set_definition(self, toks) -> None:
         key, value = toks
-        self.definition[key.casefold()] = self._CONVERTER.get(key, str)(value)
+        setattr(self, key.casefold(), self._CONVERTER.get(key, str)(value))
 
     def set_wav(self, toks) -> None:
         self.wav[self.int16(toks[0])] = toks[1]

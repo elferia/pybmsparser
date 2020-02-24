@@ -54,7 +54,7 @@ class TestCommandLine:
 
     def test_definition(self):
         bms = parse('#player 1')
-        assert bms.definition['player'] == 1
+        assert bms.player == 1
 
 
 class TestDefinition:
@@ -64,19 +64,19 @@ class TestDefinition:
 
     def test_genre(self):
         bms = parse('#GENRE 音楽')
-        assert bms.definition['genre'] == '音楽'
+        assert bms.genre == '音楽'
 
     def test_title(self):
         bms = parse('#title foo bar baz')
-        assert bms.definition['title'] == 'foo bar baz'
+        assert bms.title == 'foo bar baz'
 
     def test_artist(self):
         bms = parse('#artist foo')
-        assert bms.definition['artist'] == 'foo'
+        assert bms.artist == 'foo'
 
     def test_bpm(self):
         bms = parse('#bpm 150')
-        assert bms.definition['bpm'] == 150
+        assert bms.bpm == 150
 
 
 class TestWAV:
