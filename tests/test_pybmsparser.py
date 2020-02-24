@@ -83,3 +83,9 @@ class TestWAV:
     def test_wav(self):
         bms = parse('#wAvaF foo.wav')
         assert bms.wav[0xaf] == 'foo.wav'
+
+
+class TestBMP:
+    def test_bmp(self):
+        bms = parse('#BmPf1 foo.bmp')
+        assert bms.bmp[0xf1] == 'foo.bmp'
