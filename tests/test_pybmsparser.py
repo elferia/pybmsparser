@@ -19,6 +19,10 @@ class TestBMS:
         bms = parse('#foo\n')
         assert len(bms.commandline) == 1
 
+    def test_空行後1行は1line(self):
+        bms = parse('\n#foo')
+        assert len(bms.commandline) == 1
+
     def test_2行EOFは2line(self):
         bms = parse('#foo\n#bar')
         assert len(bms.commandline) == 2
