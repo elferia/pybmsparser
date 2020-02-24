@@ -77,3 +77,9 @@ class TestDefinition:
     def test_bpm(self):
         bms = parse('#bpm 150')
         assert bms.definition['bpm'] == 150
+
+
+class TestWAV:
+    def test_wav(self):
+        bms = parse('#wAvaF foo.wav')
+        assert bms.wav[0xaf] == 'foo.wav'

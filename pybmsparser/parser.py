@@ -18,6 +18,7 @@ class BMS:
     command: List[str] = dc.field(default_factory=list)
     message: List[Message] = dc.field(default_factory=lambda: [None] * 1000)
     definition: Dict[str, Union[str, int]] = dc.field(default_factory=dict)
+    wav: Dict[int, str] = dc.field(default_factory=dict)
     _processor: Callable[[Any], None] = lambda _toks: None
 
     _CONVERTER = dict(
@@ -35,14 +36,21 @@ class BMS:
     def definition_found(self, _s, _loc, _toks) -> None:
         self._processor = self.set_definition
 
+    def wav_found(self, _s, _loc, _toks) -> None:
+        self._processor = self.set_wav
+
+    int16 = partial(int, base=16)
+
     def set_message(self, toks) -> None:
-        int16 = partial(int, base=16)
         self.message[int(toks[0])] = Message(
-            int16(toks[1]), [int16(m) for m in toks[2:]])
+            self.int16(toks[1]), [self.int16(m) for m in toks[2:]])
 
     def set_definition(self, toks) -> None:
         key, value = toks
         self.definition[key.casefold()] = self._CONVERTER.get(key, str)(value)
+
+    def set_wav(self, toks) -> None:
+        self.wav[self.int16(toks[0])] = toks[1]
 
 
 with open(joinpath(dirname(__file__), 'definition.txt')) as f:
@@ -70,6 +78,12 @@ def parse(bms: str) -> BMS:
                 pp.CaselessKeyword(key) + (pp.Literal(' ') ^ '\t').suppress() +
                 eval(argstr))
 
+    def wav():
+        return (
+            pp.CaselessLiteral('wav').suppress() + hex2() +
+            (pp.Literal(' ') ^ '\t').suppress() + text()).setParseAction(
+                bms_obj.wav_found)
+
     def definition():
         return pp.Or(_definition()).setParseAction(bms_obj.definition_found)
 
@@ -81,7 +95,7 @@ def parse(bms: str) -> BMS:
     def command():
         return (
             (wsp() + '#' + wsp()).suppress() +
-            (endif() ^ definition() ^ message()))
+            (endif() ^ definition() ^ wav() ^ message()))
 
     def comment(): return text().suppress()
     def line(): return (
