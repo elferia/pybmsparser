@@ -2,7 +2,9 @@ from collections import namedtuple
 from dataclasses import dataclass
 import dataclasses as dc
 from functools import partial
-from typing import Dict, List
+from operator import methodcaller
+from os.path import dirname, join as joinpath
+from typing import Any, Callable, Dict, List, Union
 
 import pyparsing as pp
 pp.ParserElement.setDefaultWhitespaceChars('')
@@ -15,18 +17,37 @@ Message = namedtuple('Message', 'channel message')
 class BMS:
     command: List[str] = dc.field(default_factory=list)
     message: List[Message] = dc.field(default_factory=lambda: [None] * 1000)
-    definition: Dict[str, str] = dc.field(default_factory=dict)
+    definition: Dict[str, Union[str, int]] = dc.field(default_factory=dict)
+    _processor: Callable[[Any], None] = lambda _toks: None
+
+    _CONVERTER = dict(
+        player=int, bpm=int, playlevel=int, rank=int, volwav=int, random=int)
+    _CONVERTER['if'] = int
 
     def extend_commandline(self, _s, _loc, toks) -> None:
-        self.command.extend(toks.asList())
+        if len(toks) > 0:  # command
+            self.command.append(toks)
+            self._processor(toks)
 
-    def set_message(self, _s, _loc, toks) -> None:
+    def message_found(self, _s, _loc, _toks) -> None:
+        self._processor = self.set_message
+
+    def definition_found(self, _s, _loc, _toks) -> None:
+        self._processor = self.set_definition
+
+    def set_message(self, toks) -> None:
         int16 = partial(int, base=16)
         self.message[int(toks[0])] = Message(
             int16(toks[1]), [int16(m) for m in toks[2:]])
 
-    def set_definition(self, _s, _loc, toks) -> None:
-        self.definition[toks[0].casefold()] = toks[1]
+    def set_definition(self, toks) -> None:
+        key, value = toks
+        self.definition[key.casefold()] = self._CONVERTER.get(key, str)(value)
+
+
+with open(joinpath(dirname(__file__), 'definition.txt')) as f:
+    definitionlist = tuple(
+        map(methodcaller('split', '#'), map(methodcaller('strip'), f)))
 
 
 def parse(bms: str) -> BMS:
@@ -34,27 +55,33 @@ def parse(bms: str) -> BMS:
     def newline(): return pp.Word('\r\n').suppress()
     def wsp(): return pp.Optional(pp.Word(' \t'))
     def hex2(): return pp.Word(pp.srange('[0-9a-fA-F]'), exact=2)
+    def dex(): return pp.Word(pp.nums)
 
     def endif(): return pp.CaselessKeyword('endif') + wsp().suppress()
 
+    def _definition():
+        nonlocal text, dex, wsp
+        for key, argstr in definitionlist:
+            yield (
+                pp.CaselessKeyword(key) + (pp.Literal(' ') ^ '\t').suppress() +
+                eval(argstr))
+
     def definition():
-        return (
-            pp.Word(pp.alphanums) + (pp.Literal(' ') ^ '\t').suppress() +
-            text()).setParseAction(bms_obj.set_definition)
+        return pp.Or(_definition()).setParseAction(bms_obj.definition_found)
 
     def message():
         return (
             pp.Word(pp.nums, exact=3) + hex2() + pp.Literal(':').suppress() +
-            pp.OneOrMore(hex2())).setParseAction(bms_obj.set_message)
+            pp.OneOrMore(hex2())).setParseAction(bms_obj.message_found)
 
     def command():
         return (
             (wsp() + '#' + wsp()).suppress() +
-            pp.Group(endif() ^ definition() ^ message()).
-            setParseAction(bms_obj.extend_commandline))
+            (endif() ^ definition() ^ message()))
 
     def comment(): return text().suppress()
-    def line(): return command() | comment()
+    def line(): return (
+        (command() | comment()).setParseAction(bms_obj.extend_commandline))
 
     bms_obj = BMS()
     bmsparser = (
@@ -62,5 +89,5 @@ def parse(bms: str) -> BMS:
         pp.Optional(newline()))
 
     bmsparser.parseWithTabs()
-    bmsparser.parseString(bms)
+    bmsparser.parseString(bms, parseAll=True)
     return bms_obj

@@ -1,3 +1,6 @@
+from pyparsing import ParseException
+from pytest import raises
+
 from pybmsparser import __version__
 from pybmsparser.parser import parse
 
@@ -50,5 +53,27 @@ class TestCommandLine:
         assert bms.message[99] == (0x10, [0x20, 0xff])
 
     def test_definition(self):
-        bms = parse('#foo bar')
-        assert bms.definition['foo'] == 'bar'
+        bms = parse('#player 1')
+        assert bms.definition['player'] == 1
+
+
+class TestDefinition:
+    def test_player(self):
+        with raises(ParseException):
+            parse('#player 10')
+
+    def test_genre(self):
+        bms = parse('#GENRE 音楽')
+        assert bms.definition['genre'] == '音楽'
+
+    def test_title(self):
+        bms = parse('#title foo bar baz')
+        assert bms.definition['title'] == 'foo bar baz'
+
+    def test_artist(self):
+        bms = parse('#artist foo')
+        assert bms.definition['artist'] == 'foo'
+
+    def test_bpm(self):
+        bms = parse('#bpm 150')
+        assert bms.definition['bpm'] == 150
