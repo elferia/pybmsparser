@@ -2,7 +2,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 import dataclasses as dc
 from functools import partial
-from typing import List
+from typing import Dict, List
 
 import pyparsing as pp
 pp.ParserElement.setDefaultWhitespaceChars('')
@@ -15,6 +15,7 @@ Message = namedtuple('Message', 'channel message')
 class BMS:
     command: List[str] = dc.field(default_factory=list)
     message: List[Message] = dc.field(default_factory=lambda: [None] * 1000)
+    definition: Dict[str, str] = dc.field(default_factory=dict)
 
     def extend_commandline(self, _s, _loc, toks) -> None:
         self.command.extend(toks.asList())
@@ -23,6 +24,9 @@ class BMS:
         int16 = partial(int, base=16)
         self.message[int(toks[0])] = Message(
             int16(toks[1]), [int16(m) for m in toks[2:]])
+
+    def set_definition(self, _s, _loc, toks) -> None:
+        self.definition[toks[0].casefold()] = toks[1]
 
 
 def parse(bms: str) -> BMS:
@@ -36,7 +40,7 @@ def parse(bms: str) -> BMS:
     def definition():
         return (
             pp.Word(pp.alphanums) + (pp.Literal(' ') ^ '\t').suppress() +
-            text())
+            text()).setParseAction(bms_obj.set_definition)
 
     def message():
         return (

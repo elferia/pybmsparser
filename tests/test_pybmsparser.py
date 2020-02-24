@@ -50,5 +50,5 @@ class TestCommandLine:
         assert bms.message[99] == (0x10, [0x20, 0xff])
 
     def test_definition(self):
-        bms = parse('#09910:20ff')
-        assert bms.message[99] == (0x10, [0x20, 0xff])
+        bms = parse('#foo bar')
+        assert bms.definition['foo'] == 'bar'
