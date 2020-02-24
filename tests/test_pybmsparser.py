@@ -100,6 +100,10 @@ class TestMessage:
         bms = parse('#00027:00')
         assert bms.message[0] == (0x27, [0])
 
+    def test_同トラック別チャネル(self):
+        bms = parse('#00027:00\n#00021:01')
+        assert bms.message[0] == {0x27: [0], 0x21: [1]}
+
 
 class TestDuplicateDefinition:
     def test_player(self):
