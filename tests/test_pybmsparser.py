@@ -9,23 +9,23 @@ def test_version():
 class TestBMS:
     def test_空文字列は0line(self):
         bms = parse('')
-        assert len(bms.line) == 0
+        assert len(bms.commandline) == 0
 
     def test_1行EOFは1line(self):
-        bms = parse('foo')
-        assert len(bms.line) == 1
+        bms = parse('#foo')
+        assert len(bms.commandline) == 1
 
     def test_1行newlineは1line(self):
-        bms = parse('foo\n')
-        assert len(bms.line) == 1
+        bms = parse('#foo\n')
+        assert len(bms.commandline) == 1
 
     def test_2行EOFは2line(self):
-        bms = parse('foo\nbar')
-        assert len(bms.line) == 2
+        bms = parse('#foo\n#bar')
+        assert len(bms.commandline) == 2
 
     def test_2行newlineは2line(self):
-        bms = parse('foo\nbar\n')
-        assert len(bms.line) == 2
+        bms = parse('#foo\n#bar\n')
+        assert len(bms.commandline) == 2
 
 
 class TestLine:
@@ -37,4 +37,4 @@ class TestLine:
     def test_01(self):
         '#から始まらないlineはcomment'
         bms = parse('foo')
-        assert len(bms.comment) == 1
+        assert len(bms.commandline) == 0
