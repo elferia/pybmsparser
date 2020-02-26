@@ -1,4 +1,3 @@
-from collections import namedtuple
 from dataclasses import dataclass
 import dataclasses as dc
 from enum import Enum
@@ -11,16 +10,14 @@ from typing import (
 import pyparsing as pp
 pp.ParserElement.setDefaultWhitespaceChars('')
 
-
-Message = namedtuple('Message', 'channel message')
-
 StrictFlag = Enum('StrictFlag', 'DUPRECATE_DEFINITION')
 
 
 @dataclass
 class BMS:
     command: List[str] = dc.field(default_factory=list)
-    message: List[Message] = dc.field(default_factory=lambda: [None] * 1000)
+    message: List[Dict[int, List[int]]] = dc.field(
+        default_factory=lambda: [{} for _ in range(1000)])
     player: Optional[int] = 1
     genre: Optional[str] = ''
     title: Optional[str] = ''
@@ -60,8 +57,8 @@ class BMS:
     int16 = partial(int, base=16)
 
     def set_message(self, toks) -> None:
-        self.message[int(toks[0])] = Message(
-            self.int16(toks[1]), [self.int16(m) for m in toks[2:]])
+        self.message[int(toks[0])][self.int16(toks[1])] = [
+            self.int16(m) for m in toks[2:]]
 
     def set_definition(self, toks) -> None:
         key, value = toks

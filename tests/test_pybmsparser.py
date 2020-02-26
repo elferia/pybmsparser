@@ -50,7 +50,7 @@ class TestLine:
 class TestCommandLine:
     def test_message(self):
         bms = parse('#09911:20ff')
-        assert bms.message[99] == (0x11, [0x20, 0xff])
+        assert bms.message[99] == {0x11: [0x20, 0xff]}
 
     def test_definition(self):
         bms = parse('#player 1')
@@ -94,11 +94,11 @@ class TestBMP:
 class TestMessage:
     def test_message0(self):
         bms = parse('#01001:Fa10')
-        assert bms.message[10] == (0x01, [0xfa, 0x10])
+        assert bms.message[10] == {0x01: [0xfa, 0x10]}
 
     def test_message2(self):
         bms = parse('#00027:00')
-        assert bms.message[0] == (0x27, [0])
+        assert bms.message[0] == {0x27: [0]}
 
     def test_同トラック別チャネル(self):
         bms = parse('#00027:00\n#00021:01')
