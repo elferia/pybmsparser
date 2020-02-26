@@ -38,13 +38,33 @@ class TestBMS:
 class TestLine:
     def test_00(self):
         '#から始まるlineはcommandline'
-        bms = parse('#endif')
+        bms = parse(' #endif')
         assert len(bms.command) == 1
 
     def test_01(self):
         '#から始まらないlineはcomment'
         bms = parse('foo')
         assert len(bms.command) == 0
+
+    def test_02(self):
+        '#から始まるが有効なcommandでないlineは例外'
+        with raises(ParseException):
+            parse('#foo')
+
+    def test_03(self):
+        'wspだけの行はcomment'
+        bms = parse(' ')
+        assert len(bms.command) == 0
+
+    def test_04(self):
+        'wsp#から始まるが有効なcommandでないlineは例外'
+        with raises(ParseException):
+            parse(' #foo')
+
+    def test_05(self):
+        'wspだけのcommentが改行を食わない'
+        bms = parse(' \n#endif')
+        assert len(bms.command) == 1
 
 
 class TestCommandLine:

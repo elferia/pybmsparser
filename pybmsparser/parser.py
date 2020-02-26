@@ -134,9 +134,15 @@ def parse(bms: str, *strict_flag: StrictFlag) -> BMS:
             (wsp() + '#' + wsp()).suppress() +
             (endif() ^ definition() ^ wav() ^ bmp() ^ message()))
 
-    def comment(): return text().suppress()
-    def line(): return (
-        (command() | comment()).setParseAction(bms_obj.extend_commandline))
+    def comment():
+        return (
+            wsp() + pp.CharsNotIn('#\r\n', exact=1) + pp.Optional(text()) ^
+            pp.Word(' \t') + (pp.FollowedBy(pp.Word('\r\n')) ^ pp.StringEnd())
+        ).suppress()
+
+    def line():
+        return (
+            (command() | comment()).setParseAction(bms_obj.extend_commandline))
 
     bms_obj = BMS(
         player=None, genre=None, title=None, artist=None, bpm=None,
