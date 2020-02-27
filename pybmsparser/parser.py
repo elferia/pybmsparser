@@ -4,8 +4,7 @@ from enum import Enum
 from functools import partial
 from operator import methodcaller
 from os.path import dirname, join as joinpath
-from typing import (
-    Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Set)
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Set, Tuple
 
 import pyparsing as pp
 pp.ParserElement.setDefaultWhitespaceChars('')
@@ -32,6 +31,7 @@ class BMS:
     _processor: Callable[[Any], None] = lambda _toks: None
     flag_set: FrozenSet[StrictFlag] = frozenset()
     duplicate_definitions: Set[str] = dc.field(default_factory=set)
+    duplicate_messages: Set[Tuple[int, int]] = dc.field(default_factory=set)
 
     _CONVERTER = dict(
         player=int, bpm=int, playlevel=int, rank=int, volwav=int, random=int)
@@ -57,7 +57,12 @@ class BMS:
     int16 = partial(int, base=16)
 
     def set_message(self, toks) -> None:
-        self.message[int(toks[0])][self.int16(toks[1])] = [
+        track = int(toks[0])
+        channel = self.int16(toks[1])
+        if (StrictFlag.DUPRECATE_DEFINITION in self.flag_set and
+                channel in self.message[track]):
+            self.duplicate_messages.add((track, channel))
+        self.message[track][channel] = [
             self.int16(m) for m in toks[2:]]
 
     def set_definition(self, toks) -> None:
@@ -155,14 +160,16 @@ def parse(bms: str, *strict_flag: StrictFlag) -> BMS:
     bmsparser.parseWithTabs()
     bmsparser.parseString(bms, parseAll=True)
 
-    if bms_obj.duplicate_definitions:
-        raise ParseError(bms_obj.duplicate_definitions)
+    if bms_obj.duplicate_definitions or bms_obj.duplicate_messages:
+        raise ParseError(bms_obj)
     return bms_obj
 
 
 @dataclass
 class ParseError(Exception):
     duplicate_definitions: FrozenSet[str]
+    duplicate_messages: FrozenSet[Tuple[int, int]]
 
-    def __init__(self, duplicate_definitions: Iterable[str] = ()):
-        self.duplicate_definitions = frozenset(duplicate_definitions)
+    def __init__(self, bms: BMS) -> None:
+        self.duplicate_definitions = frozenset(bms.duplicate_definitions)
+        self.duplicate_messages = frozenset(bms.duplicate_messages)

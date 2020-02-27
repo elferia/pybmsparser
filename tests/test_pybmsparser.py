@@ -133,3 +133,11 @@ class TestDuplicateDefinition:
 
     def test_player_ok(self):
         parse('#player 1\n#player 2')
+
+    def test_message(self):
+        with raises(ParseError) as e:
+            parse('#00001:00\n#00001:01', StrictFlag.DUPRECATE_DEFINITION)
+        assert e.value.duplicate_messages == frozenset(((0, 1),))
+
+    def test_message_ok(self):
+        parse('#00001:00\n#00001:01')
