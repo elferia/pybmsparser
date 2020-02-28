@@ -141,3 +141,11 @@ class TestDuplicateDefinition:
 
     def test_message_ok(self):
         parse('#00001:00\n#00001:01')
+
+    def test_wav(self):
+        with raises(ParseError) as e:
+            parse('#wav00 foo\n#WAV00 bar', StrictFlag.DUPRECATE_DEFINITION)
+        assert e.value.duplicate_wav == frozenset((0,))
+
+    def test_wav_ok(self):
+        parse('#wav00 foo\n#WAV00 bar')

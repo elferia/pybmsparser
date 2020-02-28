@@ -32,6 +32,7 @@ class BMS:
     flag_set: FrozenSet[StrictFlag] = frozenset()
     duplicate_definitions: Set[str] = dc.field(default_factory=set)
     duplicate_messages: Set[Tuple[int, int]] = dc.field(default_factory=set)
+    duplicate_wav: Set[int] = dc.field(default_factory=set)
 
     _CONVERTER = dict(
         player=int, bpm=int, playlevel=int, rank=int, volwav=int, random=int)
@@ -74,10 +75,20 @@ class BMS:
         setattr(self, key, self._CONVERTER.get(key, str)(value))
 
     def set_wav(self, toks) -> None:
-        self.wav[self.int16(toks[0])] = toks[1]
+        index_ = self.int16(toks[0])
+        if (StrictFlag.DUPRECATE_DEFINITION in self.flag_set and
+                index_ in self.wav):
+            self.duplicate_wav.add(index_)
+        self.wav[index_] = toks[1]
 
     def set_bmp(self, toks) -> None:
         self.bmp[self.int16(toks[0])] = toks[1]
+
+    @property
+    def violate(self) -> bool:
+        return bool(
+            self.duplicate_definitions or self.duplicate_messages or
+            self.duplicate_wav)
 
 
 with open(joinpath(dirname(__file__), 'definition.txt')) as f:
@@ -160,7 +171,7 @@ def parse(bms: str, *strict_flag: StrictFlag) -> BMS:
     bmsparser.parseWithTabs()
     bmsparser.parseString(bms, parseAll=True)
 
-    if bms_obj.duplicate_definitions or bms_obj.duplicate_messages:
+    if bms_obj.violate:
         raise ParseError(bms_obj)
     return bms_obj
 
@@ -169,7 +180,9 @@ def parse(bms: str, *strict_flag: StrictFlag) -> BMS:
 class ParseError(Exception):
     duplicate_definitions: FrozenSet[str]
     duplicate_messages: FrozenSet[Tuple[int, int]]
+    duplicate_wav: FrozenSet[int]
 
     def __init__(self, bms: BMS) -> None:
         self.duplicate_definitions = frozenset(bms.duplicate_definitions)
         self.duplicate_messages = frozenset(bms.duplicate_messages)
+        self.duplicate_wav = frozenset(bms.duplicate_wav)
