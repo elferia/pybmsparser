@@ -15,7 +15,7 @@ StrictFlag = Enum('StrictFlag', 'DUPRECATE_DEFINITION')
 @dataclass
 class BMS:
     command: List[str] = dc.field(default_factory=list)
-    message: List[Dict[int, List[int]]] = dc.field(
+    message: List[Dict[int, Tuple[int]]] = dc.field(
         default_factory=lambda: [{} for _ in range(1000)])
     player: Optional[int] = 1
     genre: Optional[str] = ''
@@ -64,8 +64,8 @@ class BMS:
         if (StrictFlag.DUPRECATE_DEFINITION in self.flag_set and
                 channel in self.message[track]):
             self.duplicate_messages.add((track, channel))
-        self.message[track][channel] = [
-            self.int16(m) for m in toks[2:]]
+        self.message[track][channel] = tuple(
+            self.int16(m) for m in toks[2:])
 
     def set_definition(self, toks) -> None:
         key, value = toks
