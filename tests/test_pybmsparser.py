@@ -132,7 +132,8 @@ class TestDuplicateDefinition:
         assert e.value.duplicate_definitions == frozenset('player'.split())
 
     def test_player_ok(self):
-        parse('#player 1\n#player 2')
+        bms = parse('#player 1\n#player 2')
+        assert bms.player == 2
 
     def test_message(self):
         with raises(ParseError) as e:
@@ -140,7 +141,8 @@ class TestDuplicateDefinition:
         assert e.value.duplicate_messages == frozenset(((0, 1),))
 
     def test_message_ok(self):
-        parse('#00001:00\n#00001:01')
+        bms = parse('#00001:00\n#00001:01')
+        assert bms.message[0][1] == [1]
 
     def test_wav(self):
         with raises(ParseError) as e:
@@ -148,4 +150,14 @@ class TestDuplicateDefinition:
         assert e.value.duplicate_wav == frozenset((0,))
 
     def test_wav_ok(self):
-        parse('#wav00 foo\n#WAV00 bar')
+        bms = parse('#wav00 foo\n#WAV00 bar')
+        assert bms.wav[0] == 'bar'
+
+    def test_bmp(self):
+        with raises(ParseError) as e:
+            parse('#Bmpff foo\n#bMPff bar', StrictFlag.DUPRECATE_DEFINITION)
+        assert e.value.duplicate_bmp == frozenset((0xff,))
+
+    def test_bmp_ok(self):
+        bms = parse('#Bmpff foo\n#bMPff bar')
+        assert bms.bmp[0xff] == 'bar'
